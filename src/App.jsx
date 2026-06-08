@@ -147,6 +147,355 @@ function RacketGlyph({ className = '' }) {
 }
 
 /* ----------------------------------------------------------------------------
+ *  ③b  HERO ILLUSTRATIONS  (swap ACTIVE_HERO to preview each one)
+ *       1 = Floating Vote Cards
+ *       2 = Pulsing Avatar Grid
+ *       3 = Slot Counter Hero
+ *       4 = Countdown + Urgency
+ * ------------------------------------------------------------------------- */
+const ACTIVE_HERO = 0
+
+/* — 0. SVG Illustration ————————————————————————————————————————————— */
+function RosterIllustration({ className = '' }) {
+  // Avatar data: cx, cy, initial, yes, floatDelay, floatDur
+  const avatars = [
+    { cx: 200, cy: 110, r: 34, init: 'D', yes: true,  fd: '0s',    dur: '5.8s' },
+    { cx: 340, cy:  72, r: 28, init: 'M', yes: true,  fd: '0.6s',  dur: '6.4s' },
+    { cx: 116, cy: 220, r: 26, init: 'A', yes: false, fd: '1.1s',  dur: '5.2s' },
+    { cx: 310, cy: 200, r: 30, init: 'H', yes: true,  fd: '0.3s',  dur: '7s'   },
+    { cx: 180, cy: 310, r: 28, init: 'L', yes: true,  fd: '0.9s',  dur: '6s'   },
+    { cx: 360, cy: 310, r: 24, init: 'T', yes: true,  fd: '1.4s',  dur: '5.5s' },
+    { cx:  90, cy: 330, r: 22, init: 'P', yes: false, fd: '0.7s',  dur: '6.8s' },
+  ]
+  const hub = { cx: 232, cy: 210 }
+
+  return (
+    <div className={cx('relative overflow-hidden rounded-3xl', className)}>
+      <svg viewBox="0 0 460 420" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+        <defs>
+          <radialGradient id="bgGrad" cx="50%" cy="40%" r="70%">
+            <stop offset="0%" stopColor="#1e293b" />
+            <stop offset="100%" stopColor="#0f172a" />
+          </radialGradient>
+          <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ccff00" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#ccff00" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="glow1" cx="30%" cy="25%" r="55%">
+            <stop offset="0%" stopColor="#ccff00" stopOpacity="0.1" />
+            <stop offset="100%" stopColor="#ccff00" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="glow2" cx="75%" cy="75%" r="50%">
+            <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+          </radialGradient>
+          <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="6" />
+          </filter>
+          <filter id="avatarShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.4" />
+          </filter>
+        </defs>
+
+        {/* background */}
+        <rect width="460" height="420" rx="24" fill="url(#bgGrad)" />
+        <rect width="460" height="420" rx="24" fill="url(#glow1)" />
+        <rect width="460" height="420" rx="24" fill="url(#glow2)" />
+
+        {/* subtle dot grid */}
+        {Array.from({ length: 8 }).map((_, col) =>
+          Array.from({ length: 7 }).map((_, row) => (
+            <circle
+              key={`${col}-${row}`}
+              cx={30 + col * 58}
+              cy={30 + row * 58}
+              r="1.2"
+              fill="#ffffff"
+              fillOpacity="0.06"
+            />
+          ))
+        )}
+
+        {/* hub glow blob */}
+        <circle cx={hub.cx} cy={hub.cy} r="80" fill="url(#hubGlow)" />
+
+        {/* connection lines from hub to each avatar */}
+        {avatars.map((a, i) => (
+          <line
+            key={`line-${i}`}
+            x1={hub.cx} y1={hub.cy}
+            x2={a.cx} y2={a.cy}
+            stroke={a.yes ? '#ccff00' : '#475569'}
+            strokeOpacity={a.yes ? '0.25' : '0.15'}
+            strokeWidth="1.5"
+            strokeDasharray="4 5"
+          />
+        ))}
+
+        {/* hub circle */}
+        <circle cx={hub.cx} cy={hub.cy} r="38" fill="#0f172a" stroke="#ccff00" strokeWidth="2" strokeOpacity="0.6" filter="url(#avatarShadow)" />
+        <circle cx={hub.cx} cy={hub.cy} r="38" fill="#ccff00" fillOpacity="0.06" />
+        {/* hub icon — P letterform */}
+        <path
+          d={`M${hub.cx - 10} ${hub.cy + 12}V${hub.cy - 12}h10a8 8 0 0 1 0 16h-6`}
+          stroke="#ccff00" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
+        />
+        <circle cx={hub.cx + 14} cy={hub.cy - 8} r="3.5" fill="#ccff00" />
+
+        {/* avatars */}
+        {avatars.map((a, i) => (
+          <g key={`av-${i}`}>
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              values={`0 0; 0 -8; 0 0`}
+              dur={a.dur}
+              begin={a.fd}
+              repeatCount="indefinite"
+              additive="sum"
+            />
+
+            {/* glow behind avatar */}
+            {a.yes && (
+              <circle cx={a.cx} cy={a.cy} r={a.r + 12} fill="#ccff00" fillOpacity="0.08" filter="url(#soft)" />
+            )}
+
+            {/* avatar body */}
+            <circle cx={a.cx} cy={a.cy} r={a.r} fill="#1e293b" stroke={a.yes ? '#ccff00' : '#334155'} strokeWidth={a.yes ? '2' : '1.5'} filter="url(#avatarShadow)" />
+
+            {/* initial */}
+            <text
+              x={a.cx} y={a.cy + 1}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontFamily="Inter, ui-sans-serif, system-ui, sans-serif"
+              fontWeight="900"
+              fontSize={a.r * 0.7}
+              fill={a.yes ? '#ccff00' : '#64748b'}
+            >
+              {a.init}
+            </text>
+
+            {/* badge */}
+            <circle
+              cx={a.cx + a.r * 0.68}
+              cy={a.cy - a.r * 0.68}
+              r="11"
+              fill={a.yes ? '#ccff00' : '#1e293b'}
+              stroke={a.yes ? '#ccff00' : '#475569'}
+              strokeWidth="1.5"
+            />
+            {a.yes ? (
+              /* checkmark */
+              <path
+                d={`M${a.cx + a.r * 0.68 - 5} ${a.cy - a.r * 0.68}l3 3 5 -5`}
+                stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+              />
+            ) : (
+              /* x mark */
+              <>
+                <line x1={a.cx + a.r * 0.68 - 4} y1={a.cy - a.r * 0.68 - 4} x2={a.cx + a.r * 0.68 + 4} y2={a.cy - a.r * 0.68 + 4} stroke="#64748b" strokeWidth="2" strokeLinecap="round" />
+                <line x1={a.cx + a.r * 0.68 + 4} y1={a.cy - a.r * 0.68 - 4} x2={a.cx + a.r * 0.68 - 4} y2={a.cy - a.r * 0.68 + 4} stroke="#64748b" strokeWidth="2" strokeLinecap="round" />
+              </>
+            )}
+          </g>
+        ))}
+
+        {/* pill label bottom */}
+        <rect x="130" y="378" width="200" height="32" rx="16" fill="#ccff00" fillOpacity="0.1" stroke="#ccff00" strokeOpacity="0.3" strokeWidth="1" />
+        <text x="230" y="399" textAnchor="middle" fontFamily="Inter, ui-sans-serif" fontWeight="700" fontSize="13" fill="#ccff00" fillOpacity="0.9">
+          5 attending · 2 declined
+        </text>
+      </svg>
+    </div>
+  )
+}
+
+/* — 1. Floating Vote Cards ——————————————————————————————————————————— */
+const MOCK_VOTES = [
+  { name: 'Danh',  yes: true,  guests: 0, delay: 0 },
+  { name: 'Minh',  yes: true,  guests: 2, delay: 180 },
+  { name: 'Anh',   yes: false, guests: 0, delay: 360 },
+  { name: 'Hùng',  yes: true,  guests: 1, delay: 540 },
+  { name: 'Linh',  yes: true,  guests: 0, delay: 720 },
+]
+function FloatingVoteCards() {
+  return (
+    <div className="relative rounded-3xl bg-slate-900 p-6 overflow-hidden min-h-[340px]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-48 w-64 rounded-full bg-lime-400/10 blur-3xl" />
+      </div>
+      {/* header bar */}
+      <div className="relative flex items-center justify-between mb-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tuesday Night Smash</p>
+          <p className="mt-0.5 text-sm font-bold text-white">Votes coming in…</p>
+        </div>
+        <span className="flex items-center gap-1.5 rounded-full bg-lime-400/10 px-3 py-1 text-xs font-semibold text-lime-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-lime-400 animate-pulse" />
+          Live
+        </span>
+      </div>
+      {/* vote cards */}
+      <div className="relative space-y-2.5">
+        {MOCK_VOTES.map((v, i) => (
+          <div
+            key={i}
+            className="animate-slide-up flex items-center gap-3 rounded-2xl border border-slate-700/60 bg-slate-800/70 px-4 py-3 backdrop-blur"
+            style={{ animationDelay: `${v.delay}ms` }}
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-700 text-sm font-black text-lime-400">
+              {v.name[0]}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{v.name}</p>
+              {v.yes && v.guests > 0
+                ? <p className="text-xs text-slate-400">+{v.guests} guest{v.guests > 1 ? 's' : ''}</p>
+                : <p className="text-xs text-slate-500">{v.yes ? '1 slot' : '—'}</p>}
+            </div>
+            <span className={cx(
+              'grid h-8 w-8 shrink-0 place-items-center rounded-xl text-sm font-black',
+              v.yes ? 'bg-lime-400 text-slate-900' : 'bg-slate-700 text-slate-400'
+            )}>
+              {v.yes ? <Check className="h-4 w-4" strokeWidth={3} /> : <X className="h-4 w-4" strokeWidth={3} />}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* — 2. Pulsing Avatar Grid ——————————————————————————————————————————— */
+const AVATAR_NAMES = ['A','M','H','D','L','T','P','N','Q','B','K','C']
+function PulsingAvatarGrid() {
+  const filled = 7
+  return (
+    <div className="relative rounded-3xl bg-slate-900 p-6 overflow-hidden min-h-[340px] flex flex-col justify-between">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute bottom-0 right-0 h-48 w-48 rounded-full bg-lime-400/10 blur-3xl" />
+      </div>
+      <div className="relative">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tuesday Night Smash</p>
+        <p className="mt-1 text-2xl font-black text-white">{filled} <span className="text-slate-500 font-medium text-lg">/ {AVATAR_NAMES.length} players</span></p>
+      </div>
+      <div className="relative mt-4 grid grid-cols-6 gap-3">
+        {AVATAR_NAMES.map((name, i) => {
+          const active = i < filled
+          return (
+            <div
+              key={i}
+              className={cx(
+                'animate-pop-in aspect-square rounded-2xl flex items-center justify-center text-sm font-black transition-all',
+                active ? 'bg-lime-400 text-slate-900' : 'border-2 border-slate-700 text-slate-600'
+              )}
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              {active
+                ? name
+                : <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />}
+            </div>
+          )
+        })}
+      </div>
+      <div className="relative mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+        <div className="h-full rounded-full bg-lime-400 transition-all duration-1000" style={{ width: `${(filled / AVATAR_NAMES.length) * 100}%` }} />
+      </div>
+      <p className="relative mt-2 text-xs text-slate-500">{AVATAR_NAMES.length - filled} spots remaining</p>
+    </div>
+  )
+}
+
+/* — 3. Slot Counter Hero ————————————————————————————————————————————— */
+const SLOT_NAMES = ['Danh', 'Minh (+2)', 'Hùng', 'Anh', 'Linh (+1)']
+function SlotCounterHero() {
+  return (
+    <div className="relative rounded-3xl bg-slate-900 p-6 overflow-hidden min-h-[340px] flex flex-col justify-between">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 rounded-full bg-lime-400/10 blur-3xl" />
+      </div>
+      {/* big counter */}
+      <div className="relative text-center pt-2">
+        <p className="text-[80px] font-black leading-none tabular-nums text-lime-400 animate-fade-in">6</p>
+        <p className="text-slate-500 font-medium text-lg -mt-1">of <span className="text-white font-bold">8</span> slots filled</p>
+      </div>
+      {/* progress */}
+      <div className="relative mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+        <div className="h-full rounded-full bg-lime-400" style={{ width: '75%' }} />
+      </div>
+      {/* names */}
+      <div className="relative mt-4 space-y-2">
+        {SLOT_NAMES.map((n, i) => (
+          <div key={i} className="animate-slide-up flex items-center gap-2" style={{ animationDelay: `${i * 100}ms` }}>
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-slate-800 text-[10px] font-bold text-lime-400">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span className="text-sm font-medium text-slate-300">{n}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* — 4. Countdown + Urgency ——————————————————————————————————————————— */
+function CountdownHero() {
+  const [secs, setSecs] = useState(2 * 3600 + 47 * 60 + 33)
+  useEffect(() => {
+    const t = setInterval(() => setSecs((s) => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const h  = String(Math.floor(secs / 3600)).padStart(2, '0')
+  const m  = String(Math.floor((secs % 3600) / 60)).padStart(2, '0')
+  const s  = String(secs % 60).padStart(2, '0')
+  const filled = 6; const max = 8
+  const pct = (filled / max) * 100
+  return (
+    <div className="relative rounded-3xl bg-slate-900 p-6 overflow-hidden min-h-[340px] flex flex-col justify-between">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-red-400/10 blur-3xl" />
+      </div>
+      <div className="relative">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Deadline closing in</p>
+        <div className="mt-3 flex items-end gap-2">
+          {[h, m, s].map((v, i) => (
+            <React.Fragment key={i}>
+              <div className="text-center">
+                <div className="rounded-2xl bg-slate-800 px-3 py-2 text-3xl font-black tabular-nums text-white">{v}</div>
+                <p className="mt-1 text-[10px] text-slate-500 uppercase">{['hrs','min','sec'][i]}</p>
+              </div>
+              {i < 2 && <span className="mb-4 text-2xl font-black text-slate-600">:</span>}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+      <div className="relative mt-6">
+        <div className="flex items-center justify-between text-sm mb-2">
+          <span className="font-semibold text-white">Slots</span>
+          <span className="font-black text-lime-400">{filled}<span className="text-slate-500 font-medium">/{max}</span></span>
+        </div>
+        <div className="h-3 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className="h-full rounded-full bg-lime-400 transition-all duration-700" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="mt-3 flex items-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+          <p className="text-xs font-semibold text-amber-300">Only 2 spots left — vote before it closes!</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* — Hero switcher ———————————————————————————————————————————————————— */
+function HeroIllustration() {
+  if (ACTIVE_HERO === 0) return <RosterIllustration />
+  if (ACTIVE_HERO === 1) return <FloatingVoteCards />
+  if (ACTIVE_HERO === 2) return <PulsingAvatarGrid />
+  if (ACTIVE_HERO === 3) return <SlotCounterHero />
+  return <CountdownHero />
+}
+
+/* ----------------------------------------------------------------------------
  *  ④ UI PRIMITIVES
  * ------------------------------------------------------------------------- */
 function Button({ as = 'button', variant = 'primary', size = 'md', className = '', children, ...p }) {
@@ -461,28 +810,8 @@ function HomePage({ go, toast }) {
           </div>
 
           {/* Right illustration */}
-          <div className="relative animate-fade-in [animation-delay:120ms]">
-            <div className="absolute inset-0 -rotate-3 rounded-[2rem] border border-slate-100 bg-white/60 backdrop-blur" />
-            <div className="relative rounded-[2rem] border border-slate-100 bg-white/80 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
-              <CourtIllustration className="w-full rounded-2xl" />
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                {[
-                  { k: 'Slots', v: '6/8', t: 'volt' },
-                  { k: 'Voted', v: '12', t: 'cyan' },
-                  { k: 'Closes', v: '3h', t: 'slate' },
-                ].map((s) => (
-                  <div key={s.k} className="rounded-2xl border border-slate-100 bg-white p-3 text-center">
-                    <p className="text-xs font-medium text-slate-400">{s.k}</p>
-                    <p className="mt-1 text-xl font-extrabold text-slate-900">{s.v}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="absolute -bottom-5 -left-5 rotate-6 text-slate-900">
-              <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-xl">
-                <RacketGlyph className="h-10 w-10 text-lime-500" />
-              </div>
-            </div>
+          <div className="animate-fade-in [animation-delay:120ms]">
+            <HeroIllustration />
           </div>
         </div>
       </section>

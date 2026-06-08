@@ -85,6 +85,7 @@ export default async function middleware(request) {
   <title>${ogTitle}</title>
   <meta name="description" content="${ogDesc}" />
 
+  <meta property="fb:app_id"        content="${process.env.FB_APP_ID || ''}" />
   <meta property="og:site_name"    content="POLLTAP" />
   <meta property="og:type"         content="website" />
   <meta property="og:url"          content="${pageUrl}" />
