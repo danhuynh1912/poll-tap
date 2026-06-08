@@ -509,7 +509,7 @@ function HomePage({ go, toast }) {
       </section>
 
       {/* CREATE FORM */}
-      <section id="create" className="mx-auto max-w-3xl px-5 py-16">
+      <section id="create" className="mx-auto max-w-3xl px-5 py-16 pb-[136px]">
         <div className="mb-8 text-center">
           <Badge tone="volt" icon={Sparkles}>Step 1</Badge>
           <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-900">
