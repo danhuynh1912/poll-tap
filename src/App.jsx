@@ -308,7 +308,10 @@ function Nav({ go }) {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
         <Logo onClick={() => go('/')} />
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="volt" onClick={() => go('/')}>
+          <Button size="sm" variant="volt" onClick={() => {
+            go('/')
+            setTimeout(() => document.getElementById('create')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 500)
+          }}>
             Create a Vote <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
