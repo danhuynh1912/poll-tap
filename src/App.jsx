@@ -14,7 +14,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import {
-  Activity, ArrowRight, ArrowLeft, Check, X, Plus, Minus, Users, Clock,
+  Activity, ArrowRight, ArrowLeft, Check, X, Plus, Minus, Users, User, Clock,
   Calendar, Shield, Zap, Lock, Link2, Copy, CheckCircle2, Circle,
   LayoutGrid, ChevronRight, Sparkles, Trophy, Settings2, Loader2,
   CalendarClock, UserPlus, Crown, AlertTriangle, ExternalLink, Hash,
@@ -1022,27 +1022,150 @@ function AdminPanel({ vote, closed, filledSlots, toast, onChanged }) {
   )
 }
 
+/* ── Slots hero counter ───────────────────────────────────────────── */
+function SlotsHero({ filledSlots, maxSlots }) {
+  const remaining = maxSlots - filledSlots
+  const full = remaining === 0
+  const pct = maxSlots > 0 ? filledSlots / maxSlots : 0
+  const isCritical = !full && remaining <= Math.max(1, Math.ceil(maxSlots * 0.2))
+  const isWarning  = !full && !isCritical && pct >= 0.5
+
+  const accent = full
+    ? { text: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-200', label: 'FULL', sub: 'No slots remaining' }
+    : isCritical
+    ? { text: 'text-red-500',   bg: 'bg-red-50',   border: 'border-red-100',   label: remaining, sub: `${remaining} slot${remaining > 1 ? 's' : ''} left — hurry!` }
+    : isWarning
+    ? { text: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100', label: remaining, sub: `${remaining} slot${remaining > 1 ? 's' : ''} remaining` }
+    : { text: 'text-lime-500',  bg: 'bg-lime-50',  border: 'border-lime-100',  label: remaining, sub: `${remaining} spot${remaining > 1 ? 's' : ''} open` }
+
+  return (
+    <div className={cx('relative overflow-hidden rounded-2xl border p-5', accent.bg, accent.border)}>
+      {/* background glow blob */}
+      {!full && (
+        <div className={cx(
+          'pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full blur-2xl opacity-40',
+          isCritical ? 'bg-red-300' : isWarning ? 'bg-amber-300' : 'bg-lime-300'
+        )} />
+      )}
+      <div className="relative flex items-center justify-between gap-4">
+        {/* big number */}
+        <div>
+          <p className={cx(
+            'font-black tabular-nums leading-none tracking-tighter transition-all duration-500',
+            full ? 'text-4xl' : 'text-6xl',
+            accent.text,
+            isCritical && 'animate-pulse'
+          )}>
+            {accent.label}
+          </p>
+          <p className={cx('mt-1.5 text-sm font-semibold', accent.text, 'opacity-70')}>
+            {accent.sub}
+          </p>
+        </div>
+        {/* filled / max */}
+        <div className="text-right shrink-0">
+          <p className="text-3xl font-black tabular-nums text-slate-900">
+            {filledSlots}<span className="text-lg font-medium text-slate-400">/{maxSlots}</span>
+          </p>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">filled</p>
+        </div>
+      </div>
+      {/* thin progress line at the bottom */}
+      <div className="relative mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
+        <div
+          className={cx('absolute inset-y-0 left-0 rounded-full transition-all duration-700',
+            full ? 'bg-slate-400' : isCritical ? 'bg-red-400' : isWarning ? 'bg-amber-400' : 'bg-lime-400'
+          )}
+          style={{ width: `${Math.min(100, Math.round(pct * 100))}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+/* ── Slot tooltip ─────────────────────────────────────────────────── */
+function SlotTip({ text, children }) {
+  return (
+    <div className="group relative">
+      {children}
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded-xl bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-lg transition-all duration-150 group-hover:opacity-100 group-hover:-translate-y-0.5">
+        {text}
+        <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+      </div>
+    </div>
+  )
+}
+
+/* ── Slot grid ────────────────────────────────────────────────────── */
+function SlotGrid({ filledSlots, maxSlots, attendees }) {
+  // Build slot descriptors: filled slots grouped by person, then empty
+  const slots = []
+  attendees.forEach((r) => {
+    const count = 1 + (r.guests || 0)
+    for (let i = 0; i < count; i++) {
+      slots.push({
+        filled: true,
+        isMain: i === 0,
+        initial: r.name.trim().charAt(0).toUpperCase(),
+        tooltip: i === 0 ? r.name : `${r.name}'s guest`,
+      })
+    }
+  })
+  for (let i = filledSlots; i < maxSlots; i++) slots.push({ filled: false, idx: i - filledSlots })
+
+  const cols = maxSlots <= 6 ? maxSlots : maxSlots <= 10 ? 5 : maxSlots <= 16 ? 8 : 10
+
+  return (
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      {slots.map((slot, i) =>
+        slot.filled ? (
+          <SlotTip key={i} text={slot.tooltip}>
+            <div className="aspect-square rounded-xl bg-slate-900 flex items-center justify-center cursor-default">
+              {slot.isMain
+                ? <span className="text-sm font-black text-lime-400">{slot.initial}</span>
+                : <User className="h-3.5 w-3.5 text-slate-500" strokeWidth={2} />}
+            </div>
+          </SlotTip>
+        ) : (
+          <div key={i} className="aspect-square rounded-xl border-2 border-lime-400/40 bg-lime-400/5 relative overflow-hidden">
+            <span
+              className="absolute inset-0 rounded-xl animate-ping bg-lime-400/15"
+              style={{ animationDelay: `${slot.idx * 180}ms`, animationDuration: '2.4s' }}
+            />
+          </div>
+        )
+      )}
+    </div>
+  )
+}
+
 /* ── Live results ─────────────────────────────────────────────────── */
 function ResultsPanel({ vote, attendees, responses, filledSlots, meId }) {
   const declined = responses.filter((r) => !r.attending)
   return (
     <div className="rounded-3xl border border-slate-100 bg-white/80 p-7 backdrop-blur-xl">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <LayoutGrid className="h-5 w-5 text-slate-400" />
-          <h3 className="text-lg font-bold text-slate-900">Attendees</h3>
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-400 opacity-75" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lime-500" />
-          </span>
-        </div>
+
+      {/* header */}
+      <div className="flex items-center gap-2">
+        <LayoutGrid className="h-5 w-5 text-slate-400" />
+        <h3 className="text-lg font-bold text-slate-900">Attendees</h3>
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-400 opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lime-500" />
+        </span>
       </div>
 
+      {/* hero counter */}
       <div className="mt-5">
-        <ProgressBar value={filledSlots} max={vote.max_slots} />
+        <SlotsHero filledSlots={filledSlots} maxSlots={vote.max_slots} />
       </div>
 
-      {/* attendees */}
+      {/* slot grid */}
+      <div className="mt-4">
+        <SlotGrid filledSlots={filledSlots} maxSlots={vote.max_slots} attendees={attendees} />
+      </div>
+
+      {/* attendee list */}
       <ul className="mt-6 space-y-2">
         {attendees.length === 0 && (
           <li className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
