@@ -1,114 +1,115 @@
 /**
  * POLLTAP — Vercel Edge Middleware
  *
- * Intercepts /vote/:id requests and injects dynamic Open Graph meta tags
- * so link previews in Messenger / Zalo / iMessage show the vote's actual
- * title, slot count, and deadline — not the generic index.html fallback.
+ * Intercepts /vote/:id requests from link-preview crawlers (Facebook,
+ * Messenger, Zalo, iMessage, Telegram, Discord…) and returns a minimal
+ * HTML page with dynamic Open Graph meta tags.
  *
- * Works at the edge (no cold-start), runs before the SPA is served.
+ * Real users are passed straight through to the Vite SPA — no overhead.
  */
 
 export const config = {
   matcher: '/vote/:id*',
 }
 
-export default async function middleware(request) {
-  const url = new URL(request.url)
+// Known link-preview crawler User-Agent patterns
+const BOT_RE =
+  /facebookexternalhit|Facebot|facebookcatalog|WhatsApp|Twitterbot|LinkedInBot|TelegramBot|Discordbot|Slackbot|Googlebot|bingbot|Applebot|ZaloPC|zalo/i
 
-  // Strip query string to get the bare vote ID
-  const voteId = url.pathname.replace('/vote/', '').split('/')[0]
-  if (!voteId) return new Response(null, { status: 404 })
+export default async function middleware(request) {
+  const ua = request.headers.get('user-agent') || ''
+
+  // ── Real users: pass straight through to the SPA ──────────────────
+  if (!BOT_RE.test(ua)) return
+
+  // ── Crawlers: build dynamic OG HTML ───────────────────────────────
+  const url    = new URL(request.url)
+  const voteId = url.pathname.replace(/^\/vote\//, '').split('/')[0]
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
 
-  // ── Fetch vote data from Supabase REST (no SDK needed at edge) ──
   let ogTitle = 'Attendance vote — POLLTAP'
-  let ogDesc  = 'Tap to vote. No login needed.'
+  let ogDesc  = 'Tap to vote Yes or No. No login needed.'
 
-  try {
-    const headers = {
-      apikey: supabaseKey,
-      Authorization: `Bearer ${supabaseKey}`,
+  // Fetch vote data (best-effort — falls back to generic tags on error)
+  if (supabaseUrl && supabaseKey && voteId) {
+    try {
+      const h = { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }
+
+      const [voteRes, respRes] = await Promise.all([
+        fetch(
+          `${supabaseUrl}/rest/v1/votes?id=eq.${voteId}&select=title,match_date,max_slots,deadline,is_closed`,
+          { headers: h }
+        ),
+        fetch(
+          `${supabaseUrl}/rest/v1/responses?vote_id=eq.${voteId}&attending=eq.true&select=guests`,
+          { headers: h }
+        ),
+      ])
+
+      const [vote] = await voteRes.json()
+      const resps  = await respRes.json()
+
+      if (vote) {
+        const filled   = Array.isArray(resps)
+          ? resps.reduce((s, r) => s + 1 + (r.guests || 0), 0)
+          : 0
+        const isClosed = vote.is_closed || new Date(vote.deadline) < new Date()
+        const open     = Math.max(0, vote.max_slots - filled)
+        const deadline = new Date(vote.deadline).toLocaleDateString('en', {
+          weekday: 'short', month: 'short', day: '2-digit',
+          hour: '2-digit', minute: '2-digit',
+        })
+
+        ogTitle = `${vote.title} — POLLTAP`
+        ogDesc  = isClosed
+          ? `${filled}/${vote.max_slots} slots filled · 🔒 Voting closed`
+          : `${filled}/${vote.max_slots} slots filled · ${open} spot${open !== 1 ? 's' : ''} left · Deadline ${deadline} · 🟢 Open`
+      }
+    } catch {
+      // fall through to generic tags
     }
-
-    const [voteRes, respRes] = await Promise.all([
-      fetch(
-        `${supabaseUrl}/rest/v1/votes?id=eq.${voteId}&select=title,match_date,max_slots,deadline,is_closed`,
-        { headers }
-      ),
-      fetch(
-        `${supabaseUrl}/rest/v1/responses?vote_id=eq.${voteId}&attending=eq.true&select=guests`,
-        { headers }
-      ),
-    ])
-
-    const [vote]    = await voteRes.json()
-    const responses = await respRes.json()
-
-    if (vote) {
-      const filled = Array.isArray(responses)
-        ? responses.reduce((sum, r) => sum + 1 + (r.guests || 0), 0)
-        : 0
-
-      const isClosed =
-        vote.is_closed || new Date(vote.deadline).getTime() < Date.now()
-
-      const deadline = new Date(vote.deadline).toLocaleDateString('en', {
-        weekday: 'short', day: '2-digit', month: 'short',
-        hour: '2-digit', minute: '2-digit',
-      })
-
-      const status = isClosed ? '🔒 Closed' : '🟢 Open for voting'
-      const open   = vote.max_slots - filled
-
-      ogTitle = `${vote.title} — POLLTAP`
-      ogDesc  = isClosed
-        ? `${filled}/${vote.max_slots} slots filled · ${status}`
-        : `${filled}/${vote.max_slots} slots filled · ${open} open · Deadline ${deadline} · ${status}`
-    }
-  } catch {
-    // Silently fall back to generic tags if Supabase is unreachable
   }
 
   const pageUrl  = url.href
   const imageUrl = `${url.origin}/og.png`
 
-  // ── Fetch the SPA shell from Vercel's static layer ──
-  const staticRes = await fetch(url.origin + '/', {
-    headers: { 'x-middleware-subrequest': '1' },
-  })
-  const html = await staticRes.text()
+  // Minimal HTML — just enough for crawlers to read OG tags.
+  // The <body> content is visible only if a bot renders the page.
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${ogTitle}</title>
+  <meta name="description" content="${ogDesc}" />
 
-  // ── Strip any existing og/twitter tags injected at build time ──
-  const stripped = html.replace(
-    /<meta\s+(?:property="og:[^"]*"|name="twitter:[^"]*")[^>]*>/gi,
-    ''
-  )
+  <meta property="og:site_name"    content="POLLTAP" />
+  <meta property="og:type"         content="website" />
+  <meta property="og:url"          content="${pageUrl}" />
+  <meta property="og:title"        content="${ogTitle}" />
+  <meta property="og:description"  content="${ogDesc}" />
+  <meta property="og:image"        content="${imageUrl}" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt"    content="${ogTitle}" />
 
-  // ── Inject fresh dynamic tags ──
-  const tags = `
-    <meta property="og:site_name"    content="POLLTAP" />
-    <meta property="og:type"         content="website" />
-    <meta property="og:url"          content="${pageUrl}" />
-    <meta property="og:title"        content="${ogTitle}" />
-    <meta property="og:description"  content="${ogDesc}" />
-    <meta property="og:image"        content="${imageUrl}" />
-    <meta property="og:image:width"  content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt"    content="${ogTitle}" />
-    <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:title"       content="${ogTitle}" />
-    <meta name="twitter:description" content="${ogDesc}" />
-    <meta name="twitter:image"       content="${imageUrl}" />
-  `
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="${ogTitle}" />
+  <meta name="twitter:description" content="${ogDesc}" />
+  <meta name="twitter:image"       content="${imageUrl}" />
+</head>
+<body>
+  <h1>${ogTitle}</h1>
+  <p>${ogDesc}</p>
+</body>
+</html>`
 
-  const injected = stripped.replace('</head>', `${tags}\n  </head>`)
-
-  return new Response(injected, {
+  return new Response(html, {
     headers: {
       'content-type': 'text/html; charset=utf-8',
-      // Short cache so slot count stays reasonably fresh
+      // Short cache so slot count stays fresh (30 s serve, up to 60 s stale)
       'cache-control': 'public, max-age=30, stale-while-revalidate=60',
     },
   })
