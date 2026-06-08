@@ -1575,7 +1575,7 @@ function Stat({ label, value, accent }) {
  * ------------------------------------------------------------------------- */
 function Footer() {
   return (
-    <footer className="border-t border-slate-100 bg-white/50 sm:fixed sm:bottom-0 w-full backdrop-blur">
+    <footer className="border-t border-slate-100 bg-white/50 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-6 sm:flex-row">
         <Logo onClick={() => (window.location.href = '/')} />
         <p className="text-sm text-slate-400 hidden sm:block">Poll + Tap · Club attendance, reimagined.</p>
