@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="20%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#ccff00" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ccff00" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="80%" cy="70%" r="50%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- subtle grid -->
+  <g stroke="#ffffff" stroke-opacity="0.03" stroke-width="1">
+    <line x1="0" y1="105" x2="1200" y2="105"/>
+    <line x1="0" y1="210" x2="1200" y2="210"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="0" y1="525" x2="1200" y2="525"/>
+    <line x1="150" y1="0" x2="150" y2="630"/>
+    <line x1="300" y1="0" x2="300" y2="630"/>
+    <line x1="450" y1="0" x2="450" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="750" y1="0" x2="750" y2="630"/>
+    <line x1="900" y1="0" x2="900" y2="630"/>
+    <line x1="1050" y1="0" x2="1050" y2="630"/>
+  </g>
+
+  <!-- badminton court (right side, decorative) -->
+  <g transform="translate(780, 80)" stroke="#ccff00" stroke-opacity="0.3" stroke-width="2" fill="none">
+    <path d="M100 430 L50 30 L310 30 L260 430 Z"/>
+    <line x1="75" y1="230" x2="285" y2="230"/>
+    <line x1="180" y1="30" x2="180" y2="430"/>
+    <path d="M120 30 L120 430" stroke-opacity="0.15"/>
+    <path d="M240 30 L240 430" stroke-opacity="0.15"/>
+    <!-- net -->
+    <line x1="75" y1="230" x2="285" y2="230" stroke="#ffffff" stroke-opacity="0.5" stroke-dasharray="6 5"/>
+    <!-- shuttle -->
+    <circle cx="195" cy="155" r="9" fill="#ccff00" stroke="none" opacity="0.9"/>
+    <path d="M195 155 q28 -40 62 -52" stroke="#ccff00" stroke-width="2.5" stroke-dasharray="4 6" stroke-linecap="round"/>
+  </g>
+
+  <!-- logo mark -->
+  <rect x="80" y="80" width="72" height="72" rx="18" fill="#0f172a" stroke="#ccff00" stroke-width="2" stroke-opacity="0.4"/>
+  <path d="M100 136V104h15.5a10 10 0 0 1 0 20H107" fill="none" stroke="#ccff00" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="136" cy="108" r="5" fill="#ccff00"/>
+
+  <!-- wordmark -->
+  <text x="172" y="131" font-family="'Inter', ui-sans-serif, system-ui, sans-serif" font-weight="900" font-size="44" letter-spacing="-1" fill="#ffffff">POLL</text>
+  <text x="310" y="131" font-family="'Inter', ui-sans-serif, system-ui, sans-serif" font-weight="900" font-size="44" letter-spacing="-1" fill="#ccff00">TAP</text>
+
+  <!-- headline -->
+  <text x="80" y="290" font-family="'Inter', ui-sans-serif, system-ui, sans-serif" font-weight="900" font-size="72" letter-spacing="-2" fill="#ffffff">Know who's playing,</text>
+  <text x="80" y="374" font-family="'Inter', ui-sans-serif, system-ui, sans-serif" font-weight="900" font-size="72" letter-spacing="-2" fill="#ccff00">before the match.</text>
+
+  <!-- sub -->
+  <text x="80" y="440" font-family="'Inter', ui-sans-serif, system-ui, sans-serif" font-weight="400" font-size="28" fill="#94a3b8">No-login attendance voting for sports clubs.</text>
+
+  <!-- pill badges -->
+  <rect x="80" y="510" width="190" height="48" rx="24" fill="#ccff00"/>
+  <text x="175" y="540" font-family="'Inter', ui-sans-serif" font-weight="700" font-size="22" fill="#0f172a" text-anchor="middle">No Login</text>
+
+  <rect x="286" y="510" width="210" height="48" rx="24" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1.5"/>
+  <text x="391" y="540" font-family="'Inter', ui-sans-serif" font-weight="600" font-size="22" fill="#cbd5e1" text-anchor="middle">Realtime</text>
+
+  <rect x="512" y="510" width="230" height="48" rx="24" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1.5"/>
+  <text x="627" y="540" font-family="'Inter', ui-sans-serif" font-weight="600" font-size="22" fill="#cbd5e1" text-anchor="middle">Slot Protection</text>
+</svg>
